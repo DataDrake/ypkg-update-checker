@@ -14,26 +14,29 @@
 // limitations under the License.
 //
 
-package cli
+package pkg
 
 import (
-	"github.com/DataDrake/cli-ng/cmd"
+	"gopkg.in/yaml.v2"
+    "os"
 )
 
-// GlobalFlags contains the flags for all commands
-type GlobalFlags struct{}
+// PackageYML is a Go representation of a package.yml file
+type PackageYML struct {
+    Name string               `yaml:"name"`
+    Version string            `yaml:"version"`
+    Sources []map[string]string `yaml:"source"`
+}
 
-// Root is the main command for this application
-var Root *cmd.RootCMD
-
-func init() {
-	// Build Application
-	Root = &cmd.RootCMD{
-		Name:  "ypkg-update-checker",
-		Short: "Tool to check for updates to software packaged by ypkg",
-		Flags: &GlobalFlags{},
-	}
-	// Setup the Sub-Commands
-	Root.RegisterCMD(&cmd.Help)
-    Root.RegisterCMD(&Quick)
+// Open parses a package.yml into a struct and returns it
+func Open(path string) (yml *PackageYML, err error) {
+    ymlFile, err := os.Open(path)
+    if err != nil {
+        return
+    }
+    defer ymlFile.Close()
+    dec := yaml.NewDecoder(ymlFile)
+    yml = &PackageYML{}
+    err = dec.Decode(yml)
+    return
 }

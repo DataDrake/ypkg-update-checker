@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   name = "github.com/DataDrake/cli-ng"
   packages = [
     "cmd",
@@ -10,6 +16,24 @@
   ]
   revision = "8a8956931f206adbcb3d774a42cb89f6acd4f4eb"
   version = "v1.0"
+
+[[projects]]
+  name = "github.com/DataDrake/cuppa"
+  packages = [
+    "config",
+    "providers",
+    "providers/cpan",
+    "providers/github",
+    "providers/gnome",
+    "providers/hackage",
+    "providers/jetbrains",
+    "providers/launchpad",
+    "providers/pypi",
+    "providers/rubygems",
+    "results"
+  ]
+  revision = "364a583fa1299eb21883c31faf40ca0dbfd25980"
+  version = "v1.0.3"
 
 [[projects]]
   name = "github.com/kisielk/gotool"
@@ -33,9 +57,15 @@
   ]
   revision = "332c0a7e205a29536e672337a4bea6c7a96b04c1"
 
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c6a2779ff2275d382b0dbb4ed88b0145692f0cbb6888dc825bc75c206ec2f7fe"
+  inputs-digest = "1dda52b8c6e42967a01c47246bad9c09a05126bbc43e3a06a434a7ec34a8f678"
   solver-name = "gps-cdcl"
   solver-version = 1
