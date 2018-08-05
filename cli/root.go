@@ -36,4 +36,5 @@ func init() {
 	// Setup the Sub-Commands
 	Root.RegisterCMD(&cmd.Help)
     Root.RegisterCMD(&Quick)
+    Root.RegisterCMD(&Report)
 }

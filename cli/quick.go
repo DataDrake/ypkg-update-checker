@@ -57,7 +57,7 @@ func QuickRun(r *cmd.RootCMD, c *cmd.CMD) {
 			        continue
 		        }
 		        r, s := p.Latest(name)
-		        if s != results.OK {
+		        if s != results.OK || r == nil {
 			        continue
 		        }
 		        found = true

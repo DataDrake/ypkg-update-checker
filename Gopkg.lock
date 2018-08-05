@@ -18,6 +18,7 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/DataDrake/cuppa"
   packages = [
     "config",
@@ -32,8 +33,7 @@
     "providers/rubygems",
     "results"
   ]
-  revision = "364a583fa1299eb21883c31faf40ca0dbfd25980"
-  version = "v1.0.3"
+  revision = "cc910342236cea9bbc6250ab643eb9afb9545308"
 
 [[projects]]
   name = "github.com/kisielk/gotool"
@@ -66,6 +66,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1dda52b8c6e42967a01c47246bad9c09a05126bbc43e3a06a434a7ec34a8f678"
+  inputs-digest = "156fa06d2f80a606525e5fe1a44c8509497ee2b9d76468c718df7014ef26830e"
   solver-name = "gps-cdcl"
   solver-version = 1
