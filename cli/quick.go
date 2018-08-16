@@ -17,7 +17,7 @@
 package cli
 
 import (
-    "fmt"
+	"fmt"
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/DataDrake/cuppa/providers"
 	"github.com/DataDrake/cuppa/results"
@@ -43,26 +43,26 @@ type QuickArgs struct {
 func QuickRun(r *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*QuickArgs)
 
-    yml, err := pkg.Open(args.Path)
-    if err != nil {
-        fmt.Printf("Failed to open package.yml, reason: \"%s\"\n", err.Error())
-        os.Exit(1)
-    }
+	yml, err := pkg.Open(args.Path)
+	if err != nil {
+		fmt.Printf("Failed to open package.yml, reason: \"%s\"\n", err.Error())
+		os.Exit(1)
+	}
 	found := false
 	for _, p := range providers.All() {
-        for _, srcs := range yml.Sources {
-            for src, _ := range srcs {
-		        name := p.Match(src)
-		        if name == "" {
-			        continue
-		        }
-		        r, s := p.Latest(name)
-		        if s != results.OK || r == nil {
-			        continue
-		        }
-		        found = true
-                fmt.Printf("%s %s %s %s\n", yml.Name, yml.Version, r.Version, r.Location)
-            }
+		for _, srcs := range yml.Sources {
+			for src, _ := range srcs {
+				name := p.Match(src)
+				if name == "" {
+					continue
+				}
+				r, s := p.Latest(name)
+				if s != results.OK || r == nil {
+					continue
+				}
+				found = true
+				fmt.Printf("%s %s %s %s\n", yml.Name, yml.Version, r.Version, r.Location)
+			}
 		}
 	}
 	if !found {

@@ -39,8 +39,8 @@ validate: setup-deps
 	@$(call stage,VET)
 	@$(call task,Running 'go vet'...)
 	@cd $(GOPROJROOT)/$(PKGNAME); for d in $(SUBPKGS); do $(GOVET) ./... && exit 1; done || $(GOVET) $(PKGNAME).go || exit 1
-	@$(call task,Running 'megacheck'...)
-	@for d in $(SUBPKGS); do $(MEGACHECK) ./$$d || exit 1; done || $(MEGACHECK) $(PKGNAME).go || exit 1
+	#@$(call task,Running 'megacheck'...)
+	#@for d in $(SUBPKGS); do $(MEGACHECK) ./$$d || exit 1; done || $(MEGACHECK) $(PKGNAME).go || exit 1
 	@$(call pass,VET)
 	@$(call stage,LINT)
 	@$(call task,Running 'golint'...)
@@ -57,11 +57,6 @@ setup-deps:
 	    $(GOINSTALL) ./...; \
 	    popd; \
 	fi
-	@if [ ! -e $(GOBIN)/megacheck ]; then \
-	    $(call task,Installing megacheck...); \
-	    $(GOGET) honnef.co/go/tools/cmd/megacheck; \
-	fi
-	@if [ -d build/src/honnef.co ]; then rm -rf build/src/honnef.co; fi
 	@if [ ! -e $(GOBIN)/golint ]; then \
 	    $(call task,Installing golint...); \
 	    $(GOGET) github.com/golang/lint/golint; \

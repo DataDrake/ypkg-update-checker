@@ -17,14 +17,12 @@
 package cli
 
 import (
-    "fmt"
+	"fmt"
 	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/DataDrake/cuppa/providers"
-	"github.com/DataDrake/cuppa/results"
 	"github.com/DataDrake/ypkg-update-checker/pkg"
-    "io/ioutil"
-  	"os"
-    "path/filepath"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 // Report gets the most recent release for all package.yml files in a directory
@@ -37,94 +35,69 @@ var Report = cmd.CMD{
 }
 
 // ReportArgs contains the arguments for the "report" subcommand
-type ReportArgs struct {}
+type ReportArgs struct{}
 
+func check(in, out chan pkg.Result, quit chan bool){
+    for {
+        select {
+        case r := <-in:
+            r.Check()
+            out <- r
+        case <-quit:
+            return
+        }
+    }
+}
 
-const ReportMatchHeader =`
-<html>
-<body>
-<h2>Matched Packages</h2>
-<hr/>
-<table>
-<thead>
-<tr><th>Name</th><th>Old Version</th><th>New Version</th><th>Location</th></tr>
-</thead>
-<tbody>
-`
-const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"
-const ReportTableClose = "</tbody></table>\n"
-
-const ReportUnmatchedHeader =`
-<h2>Unmatched Packaged</h2>
-<hr/>
-<table>
-<thead>
-<tr><th>Name</th><th>Old Version</th><th>Location</th></tr>
-</thead>
-<tbody>
-`
-
-const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n"
-const ReportSummary = "</table><p>Failed: %d</p><p>Unmatched: %d</p><p>Total: %d</p></body></html>"
+func gather(in chan pkg.Result, out chan pkg.Report, quit chan bool){
+    results := make(pkg.Report, 0)
+    for {
+        select {
+        case r := <-in:
+            results = append(results, &r)
+        case <-quit:
+            out <- results
+            return
+        }
+    }
+}
 
 // ReportRun carries out finding the latest releases
 func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
 
-    fail  := 0
-    total := 0
-
-    unmatched := make([]*pkg.PackageYML,0)
-
-    files, err := ioutil.ReadDir(".")
-    if err != nil {
-        fmt.Printf("Failed to get files in directory, reason: \"%s\"\n", err.Error())
-        os.Exit(1)
-    }
-    fmt.Println(ReportMatchHeader)
-    for _, file := range files {
-        if !file.IsDir() {
-            continue
-        }
-        yml, err := pkg.Open(filepath.Join(".", file.Name(), "package.yml"))
-        if err != nil {
-            //fmt.Printf("Failed to open package.yml, reason: \"%s\"\n", err.Error())
-            fail++
-            continue
-        }
-	    found := false
-	    for _, p := range providers.All() {
-            for _, srcs := range yml.Sources {
-                for src, _ := range srcs {
-		            name := p.Match(src)
-		            if name == "" {
-			            continue
-		            }
-		            r, s := p.Latest(name)
-		            if s != results.OK || r == nil {
-			            continue
-		            }
-                    found = true
-                    fmt.Printf(ReportMatchRow, yml.Name, yml.Version, r.Version, r.Location)
-                }
-		    }
-        }
-        if found {
-            total++
-        } else {
-            unmatched = append(unmatched, yml)
-            fail++
-        }
+	fail := 0
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		fmt.Printf("Failed to get files in directory, reason: \"%s\"\n", err.Error())
+		os.Exit(1)
 	}
-    fmt.Printf(ReportTableClose)
-    fmt.Printf(ReportUnmatchedHeader)
-    for _, yml := range unmatched {
-        for _, srcs := range yml.Sources {
-            for src, _ := range srcs {
-                fmt.Printf(ReportUnmatchedRow, yml.Name, yml.Version, src)
-            }
-        }
+    in := make(chan pkg.Result)
+    out := make(chan pkg.Result)
+    final := make(chan pkg.Report)
+    quit := make(chan bool)
+    quit2 := make(chan bool)
+    go gather(out, final, quit2)
+    for i :=0; i < 16; i++ {
+        go check(in, out, quit)
     }
-    fmt.Printf(ReportTableClose)
-    fmt.Printf(ReportSummary, fail, len(unmatched), total+fail+len(unmatched))
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+        fmt.Fprintf(os.Stderr, "Processing %s\n", file.Name())
+		r, err := pkg.NewResult(filepath.Join(".", file.Name(), "package.yml"))
+		if err != nil {
+            fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
+			fail++
+			continue
+		}
+		in <- *r
+	}
+    for i :=0; i < 16; i++ {
+        quit <- true
+    }
+    quit2 <- true
+    results := <-final
+	results.Print(fail)
 	os.Exit(0)
 }
