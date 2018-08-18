@@ -19,10 +19,18 @@ package pkg
 import (
     "fmt"
     "sort"
+    "strings"
 )
 
 const ReportMatchHeader =`
 <html>
+<head>
+<style>
+.red {background-color: #F00; color: black;}
+.green {background-color: #0F0; color: black;}
+.yellow {background-color: yellow; color: black;}
+</style>
+</head>
 <body>
 <h2>Matched Packages</h2>
 <hr/>
@@ -32,7 +40,7 @@ const ReportMatchHeader =`
 </thead>
 <tbody>
 `
-const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"
+const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td class=\"%s\">%s</td><td>%s</td></tr>\n"
 const ReportTableClose = "</tbody></table>\n"
 
 const ReportUnmatchedHeader =`
@@ -76,7 +84,13 @@ func (r Report) Print(failed int) {
     for _, result := range r {
         for _, version := range result.NewVersions {
             if version.Error == nil {
-                fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, version.Number, version.Location );
+                status := "red"
+                if result.YML.Version == version.Number {
+                    status = "green"
+                } else if strings.Contains(version.Number, result.YML.Version) {
+                    status = "green"
+                }
+                fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location );
             }
             matched++
         }
