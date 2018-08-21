@@ -24,6 +24,7 @@
     "config",
     "providers",
     "providers/cpan",
+    "providers/git",
     "providers/github",
     "providers/gnome",
     "providers/hackage",
@@ -33,7 +34,7 @@
     "providers/rubygems",
     "results"
   ]
-  revision = "1634bbe87daaa80e2e1baff4c0d69e9faf32cbab"
+  revision = "6f439b104f9c245f494c1eea33931da7d71ea710"
 
 [[projects]]
   name = "github.com/kisielk/gotool"
