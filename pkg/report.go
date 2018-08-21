@@ -19,7 +19,6 @@ package pkg
 import (
     "fmt"
     "sort"
-    "strings"
 )
 
 const ReportMatchHeader =`
@@ -54,7 +53,18 @@ const ReportUnmatchedHeader =`
 `
 
 const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n"
-const ReportSummary = "</table><p>Failed: %d</p><p>Unmatched: %d</p><p>Total: %d</p></body></html>"
+const ReportSummary = `</table>
+<h2>Summary</h2>
+<table>
+<tr><td>Matched: </td><td>                   </td><td>  </td></tr>
+<tr><td>         </td><td>Out of Date        </td><td>%d</td></tr>
+<tr><td>         </td><td>Up to Date         </td><td>%d</td></tr>
+<tr><td>         </td><td>Newer than Upstream</td><td>%d</td></tr>
+<tr><td>Unmatched</td><td>                   </td><td>%d</td></tr>
+<tr><td>Failed   </td><td>                   </td><td>%d</td></tr>
+<tr><td>Total    </td><td>                   </td><td>%d</td></tr>
+</table>
+</body></html>`
 
 
 // Report is a record of multiple package checks
@@ -79,20 +89,26 @@ func (r Report) Swap(i, j int) {
 func (r Report) Print(failed int) {
     sort.Sort(r)
     fmt.Println(ReportMatchHeader);
-    matched := 0
+    exact := 0
+    greater := 0
+    less :=0
     unmatched := 0
     for _, result := range r {
         for _, version := range result.NewVersions {
             if version.Error == nil {
                 status := "red"
-                if result.YML.Version == version.Number {
+                cmp := version.Compare(result.YML.Version)
+                if cmp == 0 {
                     status = "green"
-                } else if strings.Contains(version.Number, result.YML.Version) {
-                    status = "green"
+                    exact++
+                } else if cmp > 0 {
+                    status = "yellow"
+                    greater++
+                } else {
+                    less++
                 }
                 fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location );
             }
-            matched++
         }
     }
     fmt.Println(ReportTableClose);
@@ -105,5 +121,5 @@ func (r Report) Print(failed int) {
             }
         }
     }
-    fmt.Printf(ReportSummary, failed, unmatched, failed+matched+unmatched);
+    fmt.Printf(ReportSummary, less, exact, greater, unmatched, failed, less+exact+greater+unmatched+failed);
 }

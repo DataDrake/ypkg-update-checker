@@ -21,14 +21,6 @@ import (
     "github.com/DataDrake/cuppa/providers"
     "github.com/DataDrake/cuppa/results"
 )
-
-// Version is a record of a new version for a single source
-type Version struct {
-    Number string
-    Location string
-    Error error
-}
-
 // Result is a single result for use in a report
 type Result struct {
     YML *PackageYML
