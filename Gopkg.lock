@@ -34,7 +34,7 @@
     "providers/rubygems",
     "results"
   ]
-  revision = "6f439b104f9c245f494c1eea33931da7d71ea710"
+  revision = "0607994ed8a96b4a09031da3ef44ea1052e26825"
 
 [[projects]]
   name = "github.com/kisielk/gotool"
