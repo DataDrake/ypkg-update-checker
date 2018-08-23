@@ -37,29 +37,29 @@ var Report = cmd.CMD{
 // ReportArgs contains the arguments for the "report" subcommand
 type ReportArgs struct{}
 
-func check(in, out chan pkg.Result, quit chan bool){
-    for {
-        select {
-        case r := <-in:
-            r.Check()
-            out <- r
-        case <-quit:
-            return
-        }
-    }
+func check(in, out chan pkg.Result, quit chan bool) {
+	for {
+		select {
+		case r := <-in:
+			r.Check()
+			out <- r
+		case <-quit:
+			return
+		}
+	}
 }
 
-func gather(in chan pkg.Result, out chan pkg.Report, quit chan bool){
-    results := make(pkg.Report, 0)
-    for {
-        select {
-        case r := <-in:
-            results = append(results, &r)
-        case <-quit:
-            out <- results
-            return
-        }
-    }
+func gather(in chan pkg.Result, out chan pkg.Report, quit chan bool) {
+	results := make(pkg.Report, 0)
+	for {
+		select {
+		case r := <-in:
+			results = append(results, &r)
+		case <-quit:
+			out <- results
+			return
+		}
+	}
 }
 
 // ReportRun carries out finding the latest releases
@@ -71,33 +71,33 @@ func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
 		fmt.Printf("Failed to get files in directory, reason: \"%s\"\n", err.Error())
 		os.Exit(1)
 	}
-    in := make(chan pkg.Result)
-    out := make(chan pkg.Result)
-    final := make(chan pkg.Report)
-    quit := make(chan bool)
-    quit2 := make(chan bool)
-    go gather(out, final, quit2)
-    for i :=0; i < 16; i++ {
-        go check(in, out, quit)
-    }
+	in := make(chan pkg.Result)
+	out := make(chan pkg.Result)
+	final := make(chan pkg.Report)
+	quit := make(chan bool)
+	quit2 := make(chan bool)
+	go gather(out, final, quit2)
+	for i := 0; i < 16; i++ {
+		go check(in, out, quit)
+	}
 	for _, file := range files {
 		if !file.IsDir() {
 			continue
 		}
-        fmt.Fprintf(os.Stderr, "Processing %s\n", file.Name())
+		fmt.Fprintf(os.Stderr, "Processing %s\n", file.Name())
 		r, err := pkg.NewResult(filepath.Join(".", file.Name(), "package.yml"))
 		if err != nil {
-            fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
+			fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
 			fail++
 			continue
 		}
 		in <- *r
 	}
-    for i :=0; i < 16; i++ {
-        quit <- true
-    }
-    quit2 <- true
-    results := <-final
+	for i := 0; i < 16; i++ {
+		quit <- true
+	}
+	quit2 <- true
+	results := <-final
 	results.Print(fail)
 	os.Exit(0)
 }

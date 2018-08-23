@@ -21,51 +21,67 @@ import (
     "sort"
 )
 
-const ReportMatchHeader =`
+const ReportStart =`
 <html>
 <head>
 <style>
+html {
+    background-color: #333;
+    color: #EEE;
+    font-family: Hack, monospace;}
+body { overflow: none; }
+th {text-align: left;
+    border-bottom: 0.125rem solid #EEE;}
+td {padding: 0 0.7rem;}
+a { color: #eee; text-decoration: none;1}
 .red {background-color: #F00; color: black;}
 .green {background-color: #0F0; color: black;}
-.yellow {background-color: yellow; color: black;}
+.blue {background-color: #0EF; color: black;}
 </style>
 </head>
 <body>
-<h2>Matched Packages</h2>
-<hr/>
+`
+
+const ReportSummary = `
+<h1 id="summary">Summary</h1>
+<table>
+<tr><td>Matched: </td><td>                                 </td><td>  </td></tr>
+<tr><td>         </td><td class="red">  Out of Date        </td><td>%d</td></tr>
+<tr><td>         </td><td class="green">Up to Date         </td><td>%d</td></tr>
+<tr><td>         </td><td class="blue"> Newer than Upstream</td><td>%d</td></tr>
+<tr><td>Unmatched</td><td>                                 </td><td>%d</td></tr>
+<tr><td>Failed   </td><td>                                 </td><td>%d</td></tr>
+<tr><td>Total    </td><td>                                 </td><td>%d</td></tr>
+</table>
+<h3><a href="#unmatched">Go to Unmatched Packages</a></h3>
+`
+
+const ReportMatchHeader =`
+<h1 id="matched">Matched Packages</h1>
 <table>
 <thead>
 <tr><th>Name</th><th>Old Version</th><th>New Version</th><th>Location</th></tr>
 </thead>
 <tbody>
 `
-const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td class=\"%s\">%s</td><td>%s</td></tr>\n"
+const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td class=\"%s\">%s</td><td><a href=\"%s\">%s</a></td></tr>\n"
 const ReportTableClose = "</tbody></table>\n"
 
 const ReportUnmatchedHeader =`
-<h2>Unmatched Packaged</h2>
-<hr/>
+<h1 id="unmatched">Unmatched Packages</h1>
+<h3><a href="#summary">Back to Top</a></h3>
 <table>
 <thead>
 <tr><th>Name</th><th>Old Version</th><th>Location</th></tr>
 </thead>
 <tbody>
 `
-
-const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n"
-const ReportSummary = `</table>
-<h2>Summary</h2>
-<table>
-<tr><td>Matched: </td><td>                   </td><td>  </td></tr>
-<tr><td>         </td><td>Out of Date        </td><td>%d</td></tr>
-<tr><td>         </td><td>Up to Date         </td><td>%d</td></tr>
-<tr><td>         </td><td>Newer than Upstream</td><td>%d</td></tr>
-<tr><td>Unmatched</td><td>                   </td><td>%d</td></tr>
-<tr><td>Failed   </td><td>                   </td><td>%d</td></tr>
-<tr><td>Total    </td><td>                   </td><td>%d</td></tr>
-</table>
-</body></html>`
-
+const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td><a href=\"%s\">%s</a></td></tr>\n"
+const ReportUnmatchedClose = `
+</tbody></table>
+<h3><a href="#summary">Back to Top</a></h3>
+</body>
+`
 
 // Report is a record of multiple package checks
 type Report []*Result
@@ -88,7 +104,6 @@ func (r Report) Swap(i, j int) {
 // Print generates an HTML report
 func (r Report) Print(failed int) {
     sort.Sort(r)
-    fmt.Println(ReportMatchHeader);
     exact := 0
     greater := 0
     less :=0
@@ -96,18 +111,33 @@ func (r Report) Print(failed int) {
     for _, result := range r {
         for _, version := range result.NewVersions {
             if version.Error == nil {
-                status := "red"
                 cmp := version.Compare(result.YML.Version)
                 if cmp == 0 {
-                    status = "green"
                     exact++
                 } else if cmp > 0 {
-                    status = "yellow"
                     greater++
                 } else {
                     less++
                 }
-                fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location );
+            } else if version.Error == NotFound {
+                unmatched++
+            }
+        }
+    }
+    fmt.Println(ReportStart)
+    fmt.Printf(ReportSummary, less, exact, greater, unmatched, failed, less+exact+greater+unmatched+failed);
+    fmt.Println(ReportMatchHeader);
+    for _, result := range r {
+        for _, version := range result.NewVersions {
+            if version.Error == nil {
+                status := "red"
+                cmp := version.Compare(result.YML.Version)
+                if cmp == 0 {
+                    status = "green"
+                } else if cmp > 0 {
+                    status = "blue"
+                }
+                fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location, version.Location);
             }
         }
     }
@@ -116,10 +146,9 @@ func (r Report) Print(failed int) {
     for _, result := range r {
         for src, version := range result.NewVersions {
             if version.Error == NotFound {
-                fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src );
-                unmatched++
+                fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src , src);
             }
         }
     }
-    fmt.Printf(ReportSummary, less, exact, greater, unmatched, failed, less+exact+greater+unmatched+failed);
+    fmt.Println(ReportUnmatchedClose);
 }
