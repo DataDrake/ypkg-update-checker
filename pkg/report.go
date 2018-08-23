@@ -18,6 +18,7 @@ package pkg
 
 import (
     "fmt"
+    "math"
     "sort"
 )
 
@@ -44,6 +45,11 @@ a { color: #eee; text-decoration: none;1}
 
 const ReportSummary = `
 <h1 id="summary">Summary</h1>
+<div style="display: flex; height: 1rem; padding: 0.7rem;">
+<div class="red" style="flex: %d;"></div>
+<div class="green" style="flex: %d;"></div>
+<div class="blue" style="flex: %d;"></div>
+</div>
 <table>
 <tr><td>Matched: </td><td>                                 </td><td>  </td></tr>
 <tr><td>         </td><td class="red">  Out of Date        </td><td>%d</td></tr>
@@ -125,7 +131,13 @@ func (r Report) Print(failed int) {
         }
     }
     fmt.Println(ReportStart)
-    fmt.Printf(ReportSummary, less, exact, greater, unmatched, failed, less+exact+greater+unmatched+failed);
+    total := less + exact + greater
+    lessP    := int(math.Floor(float64(less)   /float64(total)*100.0))
+    exactP   := int(math.Floor(float64(exact)  /float64(total)*100.0))
+    greaterP := int(math.Floor(float64(greater)/float64(total)*100.0))
+    fmt.Printf(ReportSummary, lessP, exactP, greaterP,
+                              less, exact, greater,
+                              unmatched, failed, less+exact+greater+unmatched+failed);
     fmt.Println(ReportMatchHeader);
     for _, result := range r {
         for _, version := range result.NewVersions {
