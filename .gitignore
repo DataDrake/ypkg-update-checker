@@ -1,4 +1,6 @@
+ypkg-update-checker
 build/*
+_build/*
 vendor/*
 # Binaries for programs and plugins
 *.exe

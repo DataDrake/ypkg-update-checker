@@ -18,25 +18,25 @@ package pkg
 
 import (
 	"gopkg.in/yaml.v2"
-    "os"
+	"os"
 )
 
 // PackageYML is a Go representation of a package.yml file
 type PackageYML struct {
-    Name string               `yaml:"name"`
-    Version string            `yaml:"version"`
-    Sources []map[string]string `yaml:"source"`
+	Name    string              `yaml:"name"`
+	Version string              `yaml:"version"`
+	Sources []map[string]string `yaml:"source"`
 }
 
 // Open parses a package.yml into a struct and returns it
 func Open(path string) (yml *PackageYML, err error) {
-    ymlFile, err := os.Open(path)
-    if err != nil {
-        return
-    }
-    defer ymlFile.Close()
-    dec := yaml.NewDecoder(ymlFile)
-    yml = &PackageYML{}
-    err = dec.Decode(yml)
-    return
+	ymlFile, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer ymlFile.Close()
+	dec := yaml.NewDecoder(ymlFile)
+	yml = &PackageYML{}
+	err = dec.Decode(yml)
+	return
 }

@@ -51,7 +51,7 @@ func QuickRun(r *cmd.RootCMD, c *cmd.CMD) {
 	found := false
 	for _, p := range providers.All() {
 		for _, srcs := range yml.Sources {
-			for src, _ := range srcs {
+			for src := range srcs {
 				name := p.Match(src)
 				if name == "" {
 					continue

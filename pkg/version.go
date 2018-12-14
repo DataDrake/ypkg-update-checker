@@ -17,59 +17,62 @@
 package pkg
 
 import (
-    "regexp"
-    "strconv"
-    "strings"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 var versionRegex *regexp.Regexp
 
 func init() {
-    versionRegex = regexp.MustCompile("(\\d+(?:[._]\\d+)*[a-zA-z]?)")
+	versionRegex = regexp.MustCompile("(\\d+(?:[._]\\d+)*[a-zA-z]?)")
 }
 
 // Version is a record of a new version for a single source
 type Version struct {
-    Number string
-    Location string
-    Error error
-    pieces []string
+	Number   string
+	Location string
+	Error    error
+	pieces   []string
 }
 
 func versionToPieces(version string) []string {
-    all := versionRegex.FindString(version)
-    return strings.Split(all, ".")
+	all := versionRegex.FindString(version)
+	return strings.Split(all, ".")
 }
 
+// Compare allows to version nubmers to be compared to see which is newer (higher)
 func (v Version) Compare(old string) int {
-    if v.pieces == nil || len(v.pieces) == 0 {
-        v.pieces = versionToPieces(v.Number)
-    }
-    piecesOld := versionToPieces(old)
-    result := 0
-    var curr, prev int
-    var err error
-    for i, piece := range v.pieces {
-        if len(piecesOld) == i {
-            return result
-        }
-        if piecesOld[i] == piece {
-            continue
-        }
-        curr, err = strconv.Atoi(piece)
-        if err != nil {
-            goto HARD
-        }
-        prev, err = strconv.Atoi(piecesOld[i])
-        if err != nil {
-            goto HARD
-        }
-        result = prev - curr
-        goto CHECK
-HARD:   result = strings.Compare(piece, piecesOld[i])
-CHECK:   if result != 0 {
-            return result
-        }
-    }
-    return result
+	if v.pieces == nil || len(v.pieces) == 0 {
+		v.pieces = versionToPieces(v.Number)
+	}
+	piecesOld := versionToPieces(old)
+	result := 0
+	var curr, prev int
+	var err error
+	for i, piece := range v.pieces {
+		if len(piecesOld) == i {
+			return result
+		}
+		if piecesOld[i] == piece {
+			continue
+		}
+		curr, err = strconv.Atoi(piece)
+		if err != nil {
+			goto HARD
+		}
+		prev, err = strconv.Atoi(piecesOld[i])
+		if err != nil {
+			goto HARD
+		}
+		result = prev - curr
+		goto CHECK
+	HARD:
+		result = strings.Compare(piece, piecesOld[i])
+	CHECK:
+		if result != 0 {
+			return result
+		}
+	}
+	return result
 }

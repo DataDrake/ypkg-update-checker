@@ -17,12 +17,13 @@
 package pkg
 
 import (
-    "fmt"
-    "math"
-    "sort"
+	"fmt"
+	"math"
+	"sort"
 )
 
-const ReportStart =`
+// ReportStart is the header at the beginning of a report
+const ReportStart = `
 <html>
 <head>
 <style>
@@ -43,6 +44,7 @@ a { color: #eee; text-decoration: none;1}
 <body>
 `
 
+// ReportSummary is a format string for a summary of a report
 const ReportSummary = `
 <h1 id="summary">Summary</h1>
 <div style="display: flex; height: 1rem; padding: 0.7rem;">
@@ -62,7 +64,8 @@ const ReportSummary = `
 <h3><a href="#unmatched">Go to Unmatched Packages</a></h3>
 `
 
-const ReportMatchHeader =`
+// ReportMatchHeader is the header for matched packages
+const ReportMatchHeader = `
 <h1 id="matched">Matched Packages</h1>
 <table>
 <thead>
@@ -70,10 +73,15 @@ const ReportMatchHeader =`
 </thead>
 <tbody>
 `
+
+// ReportMatchRow is the format string for a row of the matched packages
 const ReportMatchRow = "<tr><td>%s</td><td>%s</td><td class=\"%s\">%s</td><td><a href=\"%s\">%s</a></td></tr>\n"
+
+// ReportTableClose terminates a table in the report
 const ReportTableClose = "</tbody></table>\n"
 
-const ReportUnmatchedHeader =`
+// ReportUnmatchedHeader is the header for unmatched packages
+const ReportUnmatchedHeader = `
 <h1 id="unmatched">Unmatched Packages</h1>
 <h3><a href="#summary">Back to Top</a></h3>
 <table>
@@ -82,7 +90,11 @@ const ReportUnmatchedHeader =`
 </thead>
 <tbody>
 `
+
+// ReportUnmatchedRow is the format strign for a row of the unmatched packages
 const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td><a href=\"%s\">%s</a></td></tr>\n"
+
+// ReportUnmatchedClose terminates the report
 const ReportUnmatchedClose = `
 </tbody></table>
 <h3><a href="#summary">Back to Top</a></h3>
@@ -94,73 +106,73 @@ type Report []*Result
 
 // Len is used for sorting
 func (r Report) Len() int {
-    return len(r);
+	return len(r)
 }
 
 // Less is used for sorting
 func (r Report) Less(i, j int) bool {
-    return r[i].YML.Name < r[j].YML.Name
+	return r[i].YML.Name < r[j].YML.Name
 }
 
 // Swap is used for sorting
 func (r Report) Swap(i, j int) {
-    r[i], r[j] = r[j], r[i]
+	r[i], r[j] = r[j], r[i]
 }
 
 // Print generates an HTML report
 func (r Report) Print(failed int) {
-    sort.Sort(r)
-    exact := 0
-    greater := 0
-    less :=0
-    unmatched := 0
-    for _, result := range r {
-        for _, version := range result.NewVersions {
-            if version.Error == nil {
-                cmp := version.Compare(result.YML.Version)
-                if cmp == 0 {
-                    exact++
-                } else if cmp > 0 {
-                    greater++
-                } else {
-                    less++
-                }
-            } else if version.Error == NotFound {
-                unmatched++
-            }
-        }
-    }
-    fmt.Println(ReportStart)
-    total := less + exact + greater
-    lessP    := int(math.Floor(float64(less)   /float64(total)*100.0))
-    exactP   := int(math.Floor(float64(exact)  /float64(total)*100.0))
-    greaterP := int(math.Floor(float64(greater)/float64(total)*100.0))
-    fmt.Printf(ReportSummary, lessP, exactP, greaterP,
-                              less, exact, greater,
-                              unmatched, failed, less+exact+greater+unmatched+failed);
-    fmt.Println(ReportMatchHeader);
-    for _, result := range r {
-        for _, version := range result.NewVersions {
-            if version.Error == nil {
-                status := "red"
-                cmp := version.Compare(result.YML.Version)
-                if cmp == 0 {
-                    status = "green"
-                } else if cmp > 0 {
-                    status = "blue"
-                }
-                fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location, version.Location);
-            }
-        }
-    }
-    fmt.Println(ReportTableClose);
-    fmt.Println(ReportUnmatchedHeader);
-    for _, result := range r {
-        for src, version := range result.NewVersions {
-            if version.Error == NotFound {
-                fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src , src);
-            }
-        }
-    }
-    fmt.Println(ReportUnmatchedClose);
+	sort.Sort(r)
+	exact := 0
+	greater := 0
+	less := 0
+	unmatched := 0
+	for _, result := range r {
+		for _, version := range result.NewVersions {
+			if version.Error == nil {
+				cmp := version.Compare(result.YML.Version)
+				if cmp == 0 {
+					exact++
+				} else if cmp > 0 {
+					greater++
+				} else {
+					less++
+				}
+			} else if version.Error == NotFound {
+				unmatched++
+			}
+		}
+	}
+	fmt.Println(ReportStart)
+	total := less + exact + greater
+	lessP := int(math.Floor(float64(less) / float64(total) * 100.0))
+	exactP := int(math.Floor(float64(exact) / float64(total) * 100.0))
+	greaterP := int(math.Floor(float64(greater) / float64(total) * 100.0))
+	fmt.Printf(ReportSummary, lessP, exactP, greaterP,
+		less, exact, greater,
+		unmatched, failed, less+exact+greater+unmatched+failed)
+	fmt.Println(ReportMatchHeader)
+	for _, result := range r {
+		for _, version := range result.NewVersions {
+			if version.Error == nil {
+				status := "red"
+				cmp := version.Compare(result.YML.Version)
+				if cmp == 0 {
+					status = "green"
+				} else if cmp > 0 {
+					status = "blue"
+				}
+				fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location, version.Location)
+			}
+		}
+	}
+	fmt.Println(ReportTableClose)
+	fmt.Println(ReportUnmatchedHeader)
+	for _, result := range r {
+		for src, version := range result.NewVersions {
+			if version.Error == NotFound {
+				fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src, src)
+			}
+		}
+	}
+	fmt.Println(ReportUnmatchedClose)
 }

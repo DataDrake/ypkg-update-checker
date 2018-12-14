@@ -17,63 +17,65 @@
 package pkg
 
 import (
-    "errors"
-    "github.com/DataDrake/cuppa/providers"
-    "github.com/DataDrake/cuppa/results"
+	"errors"
+	"github.com/DataDrake/cuppa/providers"
+	"github.com/DataDrake/cuppa/results"
 )
+
 // Result is a single result for use in a report
 type Result struct {
-    YML *PackageYML
-    NewVersions map[string]Version
+	YML         *PackageYML
+	NewVersions map[string]Version
 }
 
 // NewResult attempts to look up new sources for a package
 func NewResult(path string) (r *Result, err error) {
-    yml, err := Open(path);
-    if err != nil {
-        return
-    }
-    r = &Result{
-        YML: yml,
-        NewVersions: make(map[string]Version),
-    }
-    return
+	yml, err := Open(path)
+	if err != nil {
+		return
+	}
+	r = &Result{
+		YML:         yml,
+		NewVersions: make(map[string]Version),
+	}
+	return
 }
 
+// NotFound signifies that a matching upstream could not be identified
 var NotFound error
 
 func init() {
-    NotFound = errors.New("Could not find a matching provider")
+	NotFound = errors.New("Could not find a matching provider")
 }
 
 // Check attempts to find new sources for every source in the contained PackageYML
 func (r *Result) Check() {
-    for _, srcs := range r.YML.Sources {
-        for src, _ := range srcs {
-            var found bool
-            for _, p := range providers.All() {
-                name := p.Match(src)
-                if name == "" {
-                    continue
-                }
-                result, s := p.Latest(name)
-                if s != results.OK || result == nil {
-                    continue
-                }
-                found = true
-                v := Version{
-                    Number: result.Version,
-                    Location: result.Location,
-                }
-                r.NewVersions[src] = v
-                break
-            }
-            if !found {
-                v := Version{
-                    Error: NotFound,
-                }
-                r.NewVersions[src] = v
-            }
-        }
-    }
+	for _, srcs := range r.YML.Sources {
+		for src := range srcs {
+			var found bool
+			for _, p := range providers.All() {
+				name := p.Match(src)
+				if name == "" {
+					continue
+				}
+				result, s := p.Latest(name)
+				if s != results.OK || result == nil {
+					continue
+				}
+				found = true
+				v := Version{
+					Number:   result.Version,
+					Location: result.Location,
+				}
+				r.NewVersions[src] = v
+				break
+			}
+			if !found {
+				v := Version{
+					Error: NotFound,
+				}
+				r.NewVersions[src] = v
+			}
+		}
+	}
 }
