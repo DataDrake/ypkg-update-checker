@@ -53,19 +53,15 @@ func updateCheck(rdb *sqlx.DB, in chan string, quit chan bool) {
 			curr := make([]db.Release, 0)
 			yml, err := pkg.Open(filepath.Join(".", p, "package.yml"))
 			if err != nil {
-				if err == os.ErrNotExist {
-					curr = append(curr,
-						db.Release{
-							Package: p,
-							Updated: time.Now(),
-							Index:   0,
-							Status:  db.StatusMissingYML,
-						},
-					)
-				} else {
-					fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", p, err.Error())
-					continue
-				}
+				curr = append(curr,
+					db.Release{
+						Package: p,
+						Updated: time.Now(),
+						Index:   0,
+						Status:  db.StatusMissingYML,
+					},
+				)
+				fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", p, err.Error())
 			} else {
 				for index, src := range yml.Sources {
 					var r db.Release
