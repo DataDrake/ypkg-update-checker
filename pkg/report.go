@@ -18,8 +18,11 @@ package pkg
 
 import (
 	"fmt"
+    "github.com/DataDrake/ypkg-update-checker/db"
 	"math"
-	"sort"
+    "net/url"
+    "sort"
+    "strings"
 )
 
 // ReportStart is the header at the beginning of a report
@@ -37,9 +40,10 @@ th {text-align: left;
     border-bottom: 0.125rem solid #EEE;}
 td {padding: 0 0.7rem;}
 a { color: #eee; text-decoration: none;1}
-.red {background-color: #F00; color: black;}
-.green {background-color: #0F0; color: black;}
-.blue {background-color: #0EF; color: black;}
+.behind {background-color: #F00; color: black;}
+.held {background-color: #F93; color: black;}
+.ok {background-color: #0F0; color: black;}
+.ahead {background-color: #0EF; color: black;}
 </style>
 </head>
 <body>
@@ -49,18 +53,20 @@ a { color: #eee; text-decoration: none;1}
 const ReportSummary = `
 <h1 id="summary">Summary</h1>
 <div style="display: flex; height: 1rem; padding: 0.7rem;">
-<div class="red" style="flex: %d;"></div>
-<div class="green" style="flex: %d;"></div>
-<div class="blue" style="flex: %d;"></div>
+<div class="behind" style="flex: %d;"></div>
+<div class="held" style="flex: %d;"></div>
+<div class="ok" style="flex: %d;"></div>
+<div class="ahead" style="flex: %d;"></div>
 </div>
 <table>
-<tr><td>Matched: </td><td>                                 </td><td>  </td></tr>
-<tr><td>         </td><td class="red">  Out of Date        </td><td>%d</td></tr>
-<tr><td>         </td><td class="green">Up to Date         </td><td>%d</td></tr>
-<tr><td>         </td><td class="blue"> Newer than Upstream</td><td>%d</td></tr>
-<tr><td>Unmatched</td><td>                                 </td><td>%d</td></tr>
-<tr><td>Failed   </td><td>                                 </td><td>%d</td></tr>
-<tr><td>Total    </td><td>                                 </td><td>%d</td></tr>
+<tr><td>Matched: </td><td>                                    </td><td>  </td></tr>
+<tr><td>         </td><td class="behind"> Out of Date         </td><td>%d</td></tr>
+<tr><td>         </td><td class="held">   Held Behind         </td><td>%d</td></tr>
+<tr><td>         </td><td class="ok">     Up to Date          </td><td>%d</td></tr>
+<tr><td>         </td><td class="ahead">  Newer than Upstream </td><td>%d</td></tr>
+<tr><td>Unmatched</td><td>                                    </td><td>%d</td></tr>
+<tr><td>Failed   </td><td>                                    </td><td>%d</td></tr>
+<tr><td>Total    </td><td>                                    </td><td>%d</td></tr>
 </table>
 <h3><a href="#unmatched">Go to Unmatched Packages</a></h3>
 `
@@ -107,91 +113,90 @@ const ReportUnmatchedClose = `
 `
 
 // Report is a record of multiple package checks
-type Report []*Result
-
-// Len is used for sorting
-func (r Report) Len() int {
-	return len(r)
+type Report struct {
+    matched        []db.Release
+    unmatched      map[string][]db.Release
+    failed         []db.Release
+    unmatchedCount int
+    outOfDateCount int
+    heldBackCount  int
+    upToDateCount  int
+    aheadCount     int
 }
 
-// Less is used for sorting
-func (r Report) Less(i, j int) bool {
-	if r[i].First < r[j].First {
-        return true
+func NewReport(releases []db.Release) *Report {
+    r := &Report{}
+    for _, release := range releases {
+        switch release.Status {
+        case db.StatusUnmatched:
+            r.unmatchedCount++
+            hostname := "N/A"
+            pieces := strings.Split(release.Source,"|")
+            loc := pieces[len(pieces)-1]
+            host, err := url.Parse(loc)
+            if err == nil {
+                pieces := strings.Split(host.Hostname(),".")
+                hostname = pieces[len(pieces)-2]
+            }
+            r.unmatched[hostname] = append(r.unmatched[hostname], release)
+        case db.StatusOutOfDate:
+            r.outOfDateCount++
+            r.matched = append(r.matched, release)
+        case db.StatusHeldBack:
+            r.heldBackCount++
+            r.matched = append(r.matched, release)
+        case db.StatusUpToDate:
+            r.upToDateCount++
+            r. matched = append(r.matched, release)
+        case db.StatusAhead:
+            r.aheadCount++
+            r.matched = append(r.matched, release)
+        default:
+            r.failed = append(r.failed, release)
+        }
     }
-	if r[i].First > r[j].First {
-        return false
-    }
-    return r[i].YML.Name < r[j].YML.Name
-}
-
-// Swap is used for sorting
-func (r Report) Swap(i, j int) {
-	r[i], r[j] = r[j], r[i]
+    return r
 }
 
 // Print generates an HTML report
 func (r Report) Print(failed int) {
-	sort.Sort(r)
-	exact := 0
-	greater := 0
-	less := 0
-	unmatched := 0
-	for _, result := range r {
-		for _, version := range result.NewVersions {
-			if version.Error == nil {
-				cmp := version.Compare(result.YML.Version)
-				if cmp == 0 {
-					exact++
-				} else if cmp > 0 {
-					greater++
-				} else {
-					less++
-				}
-			} else if version.Error == NotFound {
-				unmatched++
-			}
-		}
-	}
 	fmt.Println(ReportStart)
-	total := less + exact + greater
-	lessP := int(math.Floor(float64(less) / float64(total) * 100.0))
-	exactP := int(math.Floor(float64(exact) / float64(total) * 100.0))
-	greaterP := int(math.Floor(float64(greater) / float64(total) * 100.0))
-	fmt.Printf(ReportSummary, lessP, exactP, greaterP,
-		less, exact, greater,
-		unmatched, failed, less+exact+greater+unmatched+failed)
+    matched := r.outOfDateCount + r.heldBackCount + r.upToDateCount + r.aheadCount
+	behindP := int(math.Floor(float64(r.outOfDateCount) / float64(matched) * 100.0))
+	heldP := int(math.Floor(float64(r.heldBackCount) / float64(matched) * 100.0))
+	okP := int(math.Floor(float64(r.upToDateCount) / float64(matched) * 100.0))
+	aheadP := int(math.Floor(float64(r.aheadCount) / float64(matched) * 100.0))
+	fmt.Printf(ReportSummary, behindP, heldP, okP, aheadP,
+		r.outOfDateCount, r.heldBackCount, r.upToDateCount, r.aheadCount,
+		r.unmatchedCount, len(r.failed), matched + r.unmatchedCount + len(r.failed))
 	fmt.Println(ReportMatchHeader)
-	for _, result := range r {
-		for _, version := range result.NewVersions {
-			if version.Error == nil {
-				status := "red"
-				cmp := version.Compare(result.YML.Version)
-				if cmp == 0 {
-					status = "green"
-				} else if cmp > 0 {
-					status = "blue"
-				}
-				fmt.Printf(ReportMatchRow, result.YML.Name, result.YML.Version, status, version.Number, version.Location, version.Location)
-			}
-		}
+	for _, release := range r.matched {
+        var color string
+        switch release.Status {
+        case db.StatusOutOfDate:
+            color = "behind"
+        case db.StatusHeldBack:
+            color = "held"
+        case db.StatusAhead:
+            color = "ahead"
+        default:
+            color = "ok"
+        }
+    	fmt.Printf( ReportMatchRow, release.Package, release.Current, color, release.Latest, release.Source, release.Source )
 	}
 	fmt.Println(ReportTableClose)
 	fmt.Println(ReportUnmatchedHeader)
-    host := r[0].First
-    fmt.Printf(ReportUnmatchedSectionStart, host)
-	for _, result := range r {
-        if result.First != host {
-            fmt.Println(ReportUnmatchedSectionStop)
-            host = result.First
-            fmt.Printf(ReportUnmatchedSectionStart, host)
-        }
-		for src, version := range result.NewVersions {
-			if version.Error == NotFound {
-				fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src, src)
-			}
+    hosts := make([]string,0)
+    for host := range r.unmatched {
+        hosts = append(hosts, host)
+    }
+    sort.Strings(hosts)
+	for _, host := range hosts {
+        fmt.Printf(ReportUnmatchedSectionStart, host)
+        for _, release := range r.unmatched[host] {
+			fmt.Printf(ReportUnmatchedRow, release.Package, release.Current, release.Source, release.Source)
 		}
+        fmt.Println(ReportUnmatchedSectionStop)
 	}
-    fmt.Println(ReportUnmatchedSectionStop)
 	fmt.Println(ReportUnmatchedClose)
 }

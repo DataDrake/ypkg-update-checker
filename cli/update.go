@@ -38,26 +38,43 @@ var Update = cmd.CMD{
 // UpdateArgs contains the arguments for the "update" subcommand
 type UpdateArgs struct{}
 
-func updateCheck(in, out chan pkg.Result, quit chan bool) {
+func updateCheck(rdb *sqlx.DB, in chan string, quit chan bool) {
 	for {
 		select {
-		case r := <-in:
+		case p := <-in:
+            prev := db.GetReleases(rdb, p)
+            curr := make([]db.Release)
+		    yml, err := pkg.Open(filepath.Join(".", p, "package.yml"))
+		    if err != nil {
+                if err == os.ErrNotExist {
+                    curr = append(curr,
+                        db.Release{
+                            Package: p,
+                            Updated: time.Now(),
+                            Index: 0,
+                            Status: db.StatusMissingYML
+                        }
+                    )
+                } else {
+			        fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
+        	        continue
+                }
+            } else {
+                for index, src := range r.YML.Sources {
+                    for location := range src {
+                        
+                    }
+                }
+		    }
+		r, err := pkg.NewResult(filepath.Join(".", p, "package.yml"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
+			fail++
+			continue
+		}
 			r.Check()
 			out <- r
 		case <-quit:
-			return
-		}
-	}
-}
-
-func updateGather(in chan pkg.Result, out chan pkg.Report, quit chan bool) {
-	results := make(pkg.Report, 0)
-	for {
-		select {
-		case r := <-in:
-			results = append(results, &r)
-		case <-quit:
-			out <- results
 			return
 		}
 	}
@@ -67,45 +84,44 @@ const updateWorkers = 4
 
 // UpdateRun carries out finding the latest releases
 func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
-    releases, err := db.Open()
+    rdb, err := db.Open()
     if err != nil {
 		fmt.Printf("Failed to open database, reason: \"%s\"\n", err.Error())
 		os.Exit(1)
     }
-    defer releases.Close()
+    defer rdb.Close()
 	fail := 0
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
-		fmt.Printf("Failed to get files in directory, reason: \"%s\"\n", err.Error())
+		fmt.Printf("Failed to get packages, reason: \"%s\"\n", err.Error())
 		os.Exit(1)
 	}
-	in := make(chan pkg.Result)
-	out := make(chan pkg.Result)
-	final := make(chan pkg.Report)
-	quit := make(chan bool)
-	quit2 := make(chan bool)
-	go updateGather(out, final, quit2)
-	for i := 0; i < updateWorkers; i++ {
-		go updateCheck(in, out, quit)
-	}
+    packages := make([]string,0)
 	for _, file := range files {
 		if !file.IsDir() {
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "Processing %s\n", file.Name())
-		r, err := pkg.NewResult(filepath.Join(".", file.Name(), "package.yml"))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s failed, reason: %s\n", file.Name(), err.Error())
-			fail++
-			continue
-		}
-		in <- *r
+        if file.Name() == "common" {
+            continue
+        }
+		packages = append(packages, file.Name())
+	}
+    err = db.CleanPackages(rdb, packages)
+    if err != nil {
+		fmt.Printf("Failed to clean up packages, reason: \"%s\"\n", err.Error())
+		os.Exit(1)
+    }
+	in := make(chan string)
+	quit := make(chan bool)
+	for i := 0; i < updateWorkers; i++ {
+		go updateCheck(rdb, in, quit)
+	}
+	for _, p := range packages {
+		fmt.Fprintf(os.Stderr, "Starting %s\n", p)
+		in <- p
 	}
 	for i := 0; i < updateWorkers; i++ {
 		quit <- true
 	}
-	quit2 <- true
-	results := <-final
-	results.Print(fail)
 	os.Exit(0)
 }

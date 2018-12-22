@@ -18,55 +18,50 @@ package db
 
 import (
     "github.com/jmoiron/sqlx"
-    "os/user"
+    "time"
 )
 
-const getTablesQuery = "SELECT name FROM sqlite_master WHERE type='table'"
+const (
+    StatusMissingYML = -4
+    StatusUnmatched  = -3
+    StatusOutOfDate  = -2
+    StatusHeldBack   = -1
+    StatusUpToDate   = 0
+    StatusAhead      = 1
+)
 
-const releaseSchema = `
-CREATE TABLE releases (
-    package text,
-    source text,
-    latest text,
-    updated datetime,
-    status int
-);
-`
+const getReleasesQuery = "SELECT * FROM releases WHERE package=? ORDER BY index"
+const getAllReleasesQuery = "SELECT * FROM releases WHERE package=? ORDER BY package, index"
+const insertReleaseQuery = "INSERT INTO releases VALUES (:package, :source, :current, :latest, :updated, :status, :index)"
+const updateReleaseQuery = `
+UPDATE releases
+SET
+    source=:source,
+    current=:current,
+    latest=:latest,
+    updated=:updated,
+    status=:status,
+WHERE package=:package AND index=:index`
+const removeReleaseQuery = "DROP * FROM releases WHERE package=:package AND index=:index"
 
-func CreateTables(db *sqlx.DB) error {
-    found, err := db.Query(getTablesQuery)
-    if err != nil {
-        return err
-    }
-    missing := true
-    for found.Next() {
-        var table string
-        err = found.Scan(&table)
-        if err != nil {
-            return err
-        }
-        if table == "releases" {
-            missing = false
-        }
-    }
-    if missing {
-        _, err := db.Exec(releaseSchema)
-        if err != nil {
-            return err
-        }
-    }
-    return nil
+type Release struct {
+    Package string
+    Source string
+    Current string
+    Latest string
+    Updated time.Time
+    Status int
+    Index  int
 }
 
-func Open() (db *sqlx.DB, err error) {
-    u, err := user.Current()
-    if err != nil {
-        return
-    }
-    db, err = sqlx.Connect("sqlite3", u.HomeDir + ".cache/ypkg-update.db")
-    if err != nil {
-        return
-    }
-    err = CreateTables(db)
-    return
+func GetReleases(db *sqlx.DB, name string) ([]Release, error) {
+    releases := make([]Release,0)
+    err := db.Select(&releases, getReleasesQuery, name)
+    return releases, err
+}
+
+func GetAllReleases(db *sqlx.DB) ([]Release, error) {
+    releases := make([]Release,0)
+    err := db.Get(&releases, getAllReleasesQuery)
+    return releases, err
 }
