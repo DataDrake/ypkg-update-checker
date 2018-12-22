@@ -21,6 +21,7 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/DataDrake/ypkg-update-checker/db"
 	"github.com/DataDrake/ypkg-update-checker/pkg"
+	"os"
 )
 
 // Report generates a report of the last update
@@ -37,16 +38,16 @@ type ReportArgs struct{}
 
 // ReportRun carries out finding the latest releases
 func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
-    rdb, err := db.Open()
+	rdb, err := db.Open()
 	if err != nil {
 		fmt.Printf("Failed to open database, reason: \"%s\"\n", err.Error())
 		os.Exit(1)
 	}
-    releases, err := db.GetAllReleases(rdb)
+	releases, err := db.GetAllReleases(rdb)
 	if err != nil {
 		fmt.Printf("Failed to read database, reason: \"%s\"\n", err.Error())
 		os.Exit(1)
 	}
-    report := pkg.NewReport(releases)
-    report.Print()
+	report := pkg.NewReport(releases)
+	report.Print()
 }

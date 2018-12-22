@@ -17,65 +17,65 @@
 package db
 
 import (
-    "github.com/jmoiron/sqlx"
-    "sort"
+	"github.com/jmoiron/sqlx"
+	"sort"
 )
 
 const removePackageQuery = "DROP * FROM releases WHERE package IN (?)"
 
 func UpdatePackage(db *sqlx.DB, releases []Release) error {
-    prev, err := GetReleases(db, releases[0].Package)
-    if err != nil {
-        return err
-    }
-    tx := db.MustBegin()
-    for index, release := range releases {
-        if index >= len(prev) {
-            _, err = tx.NamedExec(insertReleaseQuery, release)
-        } else if release.Updated.After(prev[index].Updated) {
-            _, err = tx.NamedExec(updateReleaseQuery, release)
-        } else {
-            // do nothing
-        }
-        if err != nil {
-            tx.Rollback()
-            return err
-        }
-    }
-    for i := len(releases); i < len(prev); i++ {
-        _, err := tx.NamedExec(removeReleaseQuery, prev[i])
-        if err != nil {
-            tx.Rollback()
-            return err
-        }
-    }
-    return tx.Commit()
+	prev, err := GetReleases(db, releases[0].Package)
+	if err != nil {
+		return err
+	}
+	tx := db.MustBegin()
+	for index, release := range releases {
+		if index >= len(prev) {
+			_, err = tx.NamedExec(insertReleaseQuery, release)
+		} else if release.Updated.After(prev[index].Updated) {
+			_, err = tx.NamedExec(updateReleaseQuery, release)
+		} else {
+			// do nothing
+		}
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	for i := len(releases); i < len(prev); i++ {
+		_, err := tx.NamedExec(removeReleaseQuery, prev[i])
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 const getPackagesQuery = "SELECT package FROM releases GROUP BY package"
 
 func CleanPackages(db *sqlx.DB, curr []string) error {
-    sort.Strings(curr)
-    prev := make([]string,0)
-    err := db.Select(&prev, getPackagesQuery)
-    if err != nil {
-        return err
-    }
-    sort.Strings(prev)
-    deletions := make([]string,0)
-    for _, p := range prev {
-        if sort.SearchStrings(curr, p) == len(curr) {
-            deletions = append(deletions, p)
-        }
-    }
-    if len(deletions) == 0 {
-        return nil
-    }
-    query, args, err := sqlx.In(removePackageQuery, deletions)
-    if err != nil {
-        return err
-    }
-    query = db.Rebind(query)
-    _, err = db.Exec(query, args)
-    return err
+	sort.Strings(curr)
+	prev := make([]string, 0)
+	err := db.Select(&prev, getPackagesQuery)
+	if err != nil {
+		return err
+	}
+	sort.Strings(prev)
+	deletions := make([]string, 0)
+	for _, p := range prev {
+		if sort.SearchStrings(curr, p) == len(curr) {
+			deletions = append(deletions, p)
+		}
+	}
+	if len(deletions) == 0 {
+		return nil
+	}
+	query, args, err := sqlx.In(removePackageQuery, deletions)
+	if err != nil {
+		return err
+	}
+	query = db.Rebind(query)
+	_, err = db.Exec(query, args)
+	return err
 }

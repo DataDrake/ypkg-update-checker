@@ -17,8 +17,8 @@
 package db
 
 import (
-    "github.com/jmoiron/sqlx"
-    "os/user"
+	"github.com/jmoiron/sqlx"
+	"os/user"
 )
 
 const getTablesQuery = "SELECT name FROM sqlite_master WHERE type='table'"
@@ -35,39 +35,39 @@ CREATE TABLE releases (
 `
 
 func CreateTables(db *sqlx.DB) error {
-    found, err := db.Queryx(getTablesQuery)
-    if err != nil {
-        return err
-    }
-    missing := true
-    for found.Next() {
-        var table string
-        err = found.Scan(&table)
-        if err != nil {
-            return err
-        }
-        if table == "releases" {
-            missing = false
-        }
-    }
-    if missing {
-        _, err := db.Exec(releaseSchema)
-        if err != nil {
-            return err
-        }
-    }
-    return nil
+	found, err := db.Queryx(getTablesQuery)
+	if err != nil {
+		return err
+	}
+	missing := true
+	for found.Next() {
+		var table string
+		err = found.Scan(&table)
+		if err != nil {
+			return err
+		}
+		if table == "releases" {
+			missing = false
+		}
+	}
+	if missing {
+		_, err := db.Exec(releaseSchema)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func Open() (db *sqlx.DB, err error) {
-    u, err := user.Current()
-    if err != nil {
-        return
-    }
-    db, err = sqlx.Connect("sqlite3", u.HomeDir + ".cache/ypkg-update.db")
-    if err != nil {
-        return
-    }
-    err = CreateTables(db)
-    return
+	u, err := user.Current()
+	if err != nil {
+		return
+	}
+	db, err = sqlx.Connect("sqlite3", u.HomeDir+".cache/ypkg-update.db")
+	if err != nil {
+		return
+	}
+	err = CreateTables(db)
+	return
 }

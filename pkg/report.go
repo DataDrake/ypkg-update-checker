@@ -18,11 +18,11 @@ package pkg
 
 import (
 	"fmt"
-    "github.com/DataDrake/ypkg-update-checker/db"
+	"github.com/DataDrake/ypkg-update-checker/db"
 	"math"
-    "net/url"
-    "sort"
-    "strings"
+	"net/url"
+	"sort"
+	"strings"
 )
 
 // ReportStart is the header at the beginning of a report
@@ -114,89 +114,89 @@ const ReportUnmatchedClose = `
 
 // Report is a record of multiple package checks
 type Report struct {
-    matched        []db.Release
-    unmatched      map[string][]db.Release
-    failed         []db.Release
-    unmatchedCount int
-    outOfDateCount int
-    heldBackCount  int
-    upToDateCount  int
-    aheadCount     int
+	matched        []db.Release
+	unmatched      map[string][]db.Release
+	failed         []db.Release
+	unmatchedCount int
+	outOfDateCount int
+	heldBackCount  int
+	upToDateCount  int
+	aheadCount     int
 }
 
 func NewReport(releases []db.Release) *Report {
-    r := &Report{}
-    for _, release := range releases {
-        switch release.Status {
-        case db.StatusUnmatched:
-            r.unmatchedCount++
-            hostname := "N/A"
-            pieces := strings.Split(release.Source,"|")
-            loc := pieces[len(pieces)-1]
-            host, err := url.Parse(loc)
-            if err == nil {
-                pieces := strings.Split(host.Hostname(),".")
-                hostname = pieces[len(pieces)-2]
-            }
-            r.unmatched[hostname] = append(r.unmatched[hostname], release)
-        case db.StatusOutOfDate:
-            r.outOfDateCount++
-            r.matched = append(r.matched, release)
-        case db.StatusHeldBack:
-            r.heldBackCount++
-            r.matched = append(r.matched, release)
-        case db.StatusUpToDate:
-            r.upToDateCount++
-            r. matched = append(r.matched, release)
-        case db.StatusAhead:
-            r.aheadCount++
-            r.matched = append(r.matched, release)
-        default:
-            r.failed = append(r.failed, release)
-        }
-    }
-    return r
+	r := &Report{}
+	for _, release := range releases {
+		switch release.Status {
+		case db.StatusUnmatched:
+			r.unmatchedCount++
+			hostname := "N/A"
+			pieces := strings.Split(release.Source, "|")
+			loc := pieces[len(pieces)-1]
+			host, err := url.Parse(loc)
+			if err == nil {
+				pieces := strings.Split(host.Hostname(), ".")
+				hostname = pieces[len(pieces)-2]
+			}
+			r.unmatched[hostname] = append(r.unmatched[hostname], release)
+		case db.StatusOutOfDate:
+			r.outOfDateCount++
+			r.matched = append(r.matched, release)
+		case db.StatusHeldBack:
+			r.heldBackCount++
+			r.matched = append(r.matched, release)
+		case db.StatusUpToDate:
+			r.upToDateCount++
+			r.matched = append(r.matched, release)
+		case db.StatusAhead:
+			r.aheadCount++
+			r.matched = append(r.matched, release)
+		default:
+			r.failed = append(r.failed, release)
+		}
+	}
+	return r
 }
 
 // Print generates an HTML report
-func (r Report) Print(failed int) {
+func (r Report) Print() {
 	fmt.Println(ReportStart)
-    matched := r.outOfDateCount + r.heldBackCount + r.upToDateCount + r.aheadCount
+	matched := r.outOfDateCount + r.heldBackCount + r.upToDateCount + r.aheadCount
 	behindP := int(math.Floor(float64(r.outOfDateCount) / float64(matched) * 100.0))
 	heldP := int(math.Floor(float64(r.heldBackCount) / float64(matched) * 100.0))
 	okP := int(math.Floor(float64(r.upToDateCount) / float64(matched) * 100.0))
 	aheadP := int(math.Floor(float64(r.aheadCount) / float64(matched) * 100.0))
 	fmt.Printf(ReportSummary, behindP, heldP, okP, aheadP,
 		r.outOfDateCount, r.heldBackCount, r.upToDateCount, r.aheadCount,
-		r.unmatchedCount, len(r.failed), matched + r.unmatchedCount + len(r.failed))
+		r.unmatchedCount, len(r.failed), matched+r.unmatchedCount+len(r.failed))
 	fmt.Println(ReportMatchHeader)
 	for _, release := range r.matched {
-        var color string
-        switch release.Status {
-        case db.StatusOutOfDate:
-            color = "behind"
-        case db.StatusHeldBack:
-            color = "held"
-        case db.StatusAhead:
-            color = "ahead"
-        default:
-            color = "ok"
-        }
-    	fmt.Printf( ReportMatchRow, release.Package, release.Current, color, release.Latest, release.Source, release.Source )
+		var color string
+		switch release.Status {
+		case db.StatusOutOfDate:
+			color = "behind"
+		case db.StatusHeldBack:
+			color = "held"
+		case db.StatusAhead:
+			color = "ahead"
+		default:
+			color = "ok"
+		}
+		fmt.Printf(ReportMatchRow, release.Package, release.Current, color, release.Latest, release.Source, release.Source)
 	}
 	fmt.Println(ReportTableClose)
 	fmt.Println(ReportUnmatchedHeader)
-    hosts := make([]string,0)
-    for host := range r.unmatched {
-        hosts = append(hosts, host)
-    }
-    sort.Strings(hosts)
+	hosts := make([]string, 0)
+	for host := range r.unmatched {
+		hosts = append(hosts, host)
+	}
+	sort.Strings(hosts)
 	for _, host := range hosts {
-        fmt.Printf(ReportUnmatchedSectionStart, host)
-        for _, release := range r.unmatched[host] {
+		fmt.Printf(ReportUnmatchedSectionStart, host)
+		for _, release := range r.unmatched[host] {
 			fmt.Printf(ReportUnmatchedRow, release.Package, release.Current, release.Source, release.Source)
 		}
-        fmt.Println(ReportUnmatchedSectionStop)
+		fmt.Println(ReportUnmatchedSectionStop)
 	}
 	fmt.Println(ReportUnmatchedClose)
 }

@@ -14,61 +14,64 @@
 // limitations under the License.
 //
 
-package pkg
+package db
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
-var versionRegex *regexp.Regexp
-
-func init() {
-	versionRegex = regexp.MustCompile("(\\d+(?:[._]\\d+)*[a-zA-z]?)\\D*$")
-}
-
 // Version is a record of a new version for a single source
-type Version struct {
-	Number   string
-	Location string
-	Error    error
-	pieces   []string
-}
+type Version []string
 
-func versionToPieces(version string) []string {
-	all := versionRegex.FindString(version)
-	return strings.Split(all, ".")
+func NewVersion(raw string) Version {
+	dots := strings.Split(raw, ".")
+	dashes := make([]string, 0)
+	for _, dot := range dots {
+		dashes = append(dashes, strings.Split(dot, "-")...)
+	}
+	pieces := make([]string, 0)
+	for _, dash := range dashes {
+		pieces = append(pieces, strings.Split(dash, "_")...)
+	}
+	v := make(Version, 0)
+	i := 0
+	if pieces[i][0] == 'v' || pieces[i][0] == 'V' {
+		v = append(v, strings.TrimLeft(pieces[i], "vV"))
+		i++
+	}
+	for i < len(pieces) && unicode.IsDigit(rune(pieces[i][0])) {
+		v = append(v, pieces[i])
+		i++
+	}
+	return v
 }
 
 // Compare allows to version nubmers to be compared to see which is newer (higher)
-func (v Version) Compare(old string) int {
-	if v.pieces == nil || len(v.pieces) == 0 {
-		v.pieces = versionToPieces(v.Number)
-	}
-	piecesOld := versionToPieces(old)
+func (v Version) Compare(old Version) int {
 	result := 0
 	var curr, prev int
 	var err error
-	for i, piece := range v.pieces {
-		if len(piecesOld) == i {
+	for i, piece := range v {
+		if len(old) == i {
 			return result
 		}
-		if piecesOld[i] == piece {
+		if old[i] == piece {
 			continue
 		}
 		curr, err = strconv.Atoi(piece)
 		if err != nil {
 			goto HARD
 		}
-		prev, err = strconv.Atoi(piecesOld[i])
+		prev, err = strconv.Atoi(old[i])
 		if err != nil {
 			goto HARD
 		}
 		result = prev - curr
 		goto CHECK
 	HARD:
-		result = strings.Compare(piece, piecesOld[i])
+		result = strings.Compare(piece, old[i])
 	CHECK:
 		if result != 0 {
 			return result
