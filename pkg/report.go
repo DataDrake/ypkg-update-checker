@@ -32,6 +32,7 @@ html {
     color: #EEE;
     font-family: Hack, monospace;}
 body { overflow: none; }
+table {margin: 2em;};
 th {text-align: left;
     border-bottom: 0.125rem solid #EEE;}
 td {padding: 0 0.7rem;}
@@ -84,6 +85,9 @@ const ReportTableClose = "</tbody></table>\n"
 const ReportUnmatchedHeader = `
 <h1 id="unmatched">Unmatched Packages</h1>
 <h3><a href="#summary">Back to Top</a></h3>
+`
+const ReportUnmatchedSectionStart = `
+<h3>%s</h3>
 <table>
 <thead>
 <tr><th>Name</th><th>Old Version</th><th>Location</th></tr>
@@ -91,12 +95,13 @@ const ReportUnmatchedHeader = `
 <tbody>
 `
 
+const ReportUnmatchedSectionStop = "</tbody></table>"
+
 // ReportUnmatchedRow is the format strign for a row of the unmatched packages
 const ReportUnmatchedRow = "<tr><td>%s</td><td>%s</td><td><a href=\"%s\">%s</a></td></tr>\n"
 
 // ReportUnmatchedClose terminates the report
 const ReportUnmatchedClose = `
-</tbody></table>
 <h3><a href="#summary">Back to Top</a></h3>
 </body>
 `
@@ -111,7 +116,13 @@ func (r Report) Len() int {
 
 // Less is used for sorting
 func (r Report) Less(i, j int) bool {
-	return r[i].YML.Name < r[j].YML.Name
+	if r[i].First < r[j].First {
+        return true
+    }
+	if r[i].First > r[j].First {
+        return false
+    }
+    return r[i].YML.Name < r[j].YML.Name
 }
 
 // Swap is used for sorting
@@ -167,12 +178,20 @@ func (r Report) Print(failed int) {
 	}
 	fmt.Println(ReportTableClose)
 	fmt.Println(ReportUnmatchedHeader)
+    host := r[0].First
+    fmt.Printf(ReportUnmatchedSectionStart, host)
 	for _, result := range r {
+        if result.First != host {
+            fmt.Println(ReportUnmatchedSectionStop)
+            host = result.First
+            fmt.Printf(ReportUnmatchedSectionStart, host)
+        }
 		for src, version := range result.NewVersions {
 			if version.Error == NotFound {
 				fmt.Printf(ReportUnmatchedRow, result.YML.Name, result.YML.Version, src, src)
 			}
 		}
 	}
+    fmt.Println(ReportUnmatchedSectionStop)
 	fmt.Println(ReportUnmatchedClose)
 }

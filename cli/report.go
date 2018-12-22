@@ -62,6 +62,8 @@ func gather(in chan pkg.Result, out chan pkg.Report, quit chan bool) {
 	}
 }
 
+const workers = 4
+
 // ReportRun carries out finding the latest releases
 func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
 
@@ -77,7 +79,7 @@ func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
 	quit := make(chan bool)
 	quit2 := make(chan bool)
 	go gather(out, final, quit2)
-	for i := 0; i < 16; i++ {
+	for i := 0; i < workers; i++ {
 		go check(in, out, quit)
 	}
 	for _, file := range files {
@@ -93,7 +95,7 @@ func ReportRun(r *cmd.RootCMD, c *cmd.CMD) {
 		}
 		in <- *r
 	}
-	for i := 0; i < 16; i++ {
+	for i := 0; i < workers; i++ {
 		quit <- true
 	}
 	quit2 <- true

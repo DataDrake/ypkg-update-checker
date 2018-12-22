@@ -25,7 +25,7 @@ import (
 var versionRegex *regexp.Regexp
 
 func init() {
-	versionRegex = regexp.MustCompile("(\\d+(?:[._]\\d+)*[a-zA-z]?)")
+	versionRegex = regexp.MustCompile("(\\d+(?:[._]\\d+)*[a-zA-z]?)\\D*$")
 }
 
 // Version is a record of a new version for a single source

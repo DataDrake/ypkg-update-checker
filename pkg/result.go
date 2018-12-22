@@ -20,12 +20,15 @@ import (
 	"errors"
 	"github.com/DataDrake/cuppa/providers"
 	"github.com/DataDrake/cuppa/results"
+    "net/url"
+    "strings"
 )
 
 // Result is a single result for use in a report
 type Result struct {
 	YML         *PackageYML
 	NewVersions map[string]Version
+    First       string
 }
 
 // NewResult attempts to look up new sources for a package
@@ -50,6 +53,7 @@ func init() {
 
 // Check attempts to find new sources for every source in the contained PackageYML
 func (r *Result) Check() {
+    first := true
 	for _, srcs := range r.YML.Sources {
 		for src := range srcs {
 			var found bool
@@ -68,6 +72,16 @@ func (r *Result) Check() {
 					Location: result.Location,
 				}
 				r.NewVersions[src] = v
+                if first {
+                    pieces := strings.Split(v.Location,"|")
+                    loc := pieces[len(pieces)-1]
+                    host, err := url.Parse(loc)
+                    if err == nil {
+                        pieces := strings.Split(host.Hostname(),".")
+                        r.First = pieces[len(pieces)-2]
+                        first = false
+                    }
+                }
 				break
 			}
 			if !found {
@@ -77,5 +91,19 @@ func (r *Result) Check() {
 				r.NewVersions[src] = v
 			}
 		}
+        if r.First == "" {
+            for src := range srcs {
+                pieces := strings.Split(src,"|")
+                loc := pieces[len(pieces)-1]
+                host, err := url.Parse(loc)
+                if err == nil {
+                    pieces := strings.Split(host.Hostname(),".")
+                    r.First = pieces[len(pieces)-2]
+                }
+                if r.First != "" {
+                    break
+                }
+            }
+        }
 	}
 }
