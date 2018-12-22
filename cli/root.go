@@ -37,4 +37,5 @@ func init() {
 	Root.RegisterCMD(&cmd.Help)
 	Root.RegisterCMD(&Quick)
 	Root.RegisterCMD(&Report)
+	Root.RegisterCMD(&Update)
 }

@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+    "runtime"
 	"time"
 )
 
@@ -69,16 +70,17 @@ func updateCheck(rdb *sqlx.DB, in chan string, quit chan bool) {
 				for index, src := range yml.Sources {
 					var r db.Release
 					for location := range src {
-						if len(prev) > index && location == prev[index].Source {
-							r = prev[index]
+						if len(prev) > index {
+    					    r = prev[index]
 						} else {
 							r = db.Release{
 								Package: p,
+                                Source: location,
 								Current: yml.Version,
 								Latest:  "N/A",
-								Updated: time.Now(),
+								Updated: time.Now().Add(-6*time.Hour),
 								Index:   index,
-								Status:  db.StatusUnmatched,
+                                Status: db.StatusUnmatched,
 							}
 						}
 					}
@@ -96,7 +98,7 @@ func updateCheck(rdb *sqlx.DB, in chan string, quit chan bool) {
 	}
 }
 
-const updateWorkers = 4
+var updateWorkers = runtime.NumCPU()
 
 // UpdateRun carries out finding the latest releases
 func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
@@ -132,7 +134,6 @@ func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
 		go updateCheck(rdb, in, quit)
 	}
 	for _, p := range packages {
-		fmt.Fprintf(os.Stderr, "Starting %s\n", p)
 		in <- p
 	}
 	for i := 0; i < updateWorkers; i++ {

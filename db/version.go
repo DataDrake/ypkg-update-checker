@@ -31,19 +31,37 @@ func NewVersion(raw string) Version {
 	for _, dot := range dots {
 		dashes = append(dashes, strings.Split(dot, "-")...)
 	}
-	pieces := make([]string, 0)
+    unclean := make([]string, 0)
 	for _, dash := range dashes {
-		pieces = append(pieces, strings.Split(dash, "_")...)
+		unclean = append(unclean, strings.Split(dash, "_")...)
 	}
+	pieces := make([]string, 0)
+	for _, u := range unclean {
+        if u != "" {
+		    pieces = append(pieces, u)
+        }
+	}
+    if len(pieces) == 0 {
+        return []string{"N/A"}
+    }
 	v := make(Version, 0)
 	i := 0
+    started := false
 	if pieces[i][0] == 'v' || pieces[i][0] == 'V' {
 		v = append(v, strings.TrimLeft(pieces[i], "vV"))
 		i++
+        started = true
 	}
-	for i < len(pieces) && unicode.IsDigit(rune(pieces[i][0])) {
-		v = append(v, pieces[i])
-		i++
+	for i < len(pieces) {
+	    if unicode.IsDigit(rune(pieces[i][0])) {
+		    v = append(v, pieces[i])
+            started = true
+        } else {
+            if started {
+                return v
+            }
+        }
+        i++
 	}
 	return v
 }

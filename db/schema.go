@@ -25,12 +25,13 @@ const getTablesQuery = "SELECT name FROM sqlite_master WHERE type='table'"
 
 const releaseSchema = `
 CREATE TABLE releases (
-    package text,
-    source text,
-    latest text,
-    updated datetime,
-    status int,
-    index  int
+    package TEXT,
+    source TEXT,
+    current TEXT,
+    latest TEXT,
+    updated DATETIME,
+    status INTEGER,
+    idx  INTEGER
 );
 `
 
@@ -64,7 +65,7 @@ func Open() (db *sqlx.DB, err error) {
 	if err != nil {
 		return
 	}
-	db, err = sqlx.Connect("sqlite3", u.HomeDir+".cache/ypkg-update.db")
+	db, err = sqlx.Connect("sqlite3", u.HomeDir+"/.cache/ypkg-update.db")
 	if err != nil {
 		return
 	}

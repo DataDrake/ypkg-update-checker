@@ -49,6 +49,7 @@ func QuickRun(r *cmd.RootCMD, c *cmd.CMD) {
 		os.Exit(1)
 	}
 	found := false
+    fmt.Printf("%#v\n", yml.Sources)
 	for _, p := range providers.All() {
 		for _, srcs := range yml.Sources {
 			for src := range srcs {

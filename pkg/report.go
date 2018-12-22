@@ -125,7 +125,9 @@ type Report struct {
 }
 
 func NewReport(releases []db.Release) *Report {
-	r := &Report{}
+	r := &Report{
+        unmatched: make(map[string][]db.Release),
+    }
 	for _, release := range releases {
 		switch release.Status {
 		case db.StatusUnmatched:

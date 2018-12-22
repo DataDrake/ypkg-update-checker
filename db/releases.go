@@ -17,6 +17,7 @@
 package db
 
 import (
+    "fmt"
 	"github.com/DataDrake/cuppa/providers"
 	"github.com/DataDrake/cuppa/results"
 	"github.com/jmoiron/sqlx"
@@ -32,9 +33,9 @@ const (
 	StatusAhead      = 1
 )
 
-const getReleasesQuery = "SELECT * FROM releases WHERE package=? ORDER BY index"
-const getAllReleasesQuery = "SELECT * FROM releases WHERE package=? ORDER BY package, index"
-const insertReleaseQuery = "INSERT INTO releases VALUES (:package, :source, :current, :latest, :updated, :status, :index)"
+const getReleasesQuery = "SELECT * FROM releases WHERE package=? ORDER BY idx"
+const getAllReleasesQuery = "SELECT * FROM releases ORDER BY package, idx"
+const insertReleaseQuery = "INSERT INTO releases VALUES (:package, :source, :current, :latest, :updated, :status, :idx)"
 const updateReleaseQuery = `
 UPDATE releases
 SET
@@ -42,9 +43,9 @@ SET
     current=:current,
     latest=:latest,
     updated=:updated,
-    status=:status,
-WHERE package=:package AND index=:index`
-const removeReleaseQuery = "DROP * FROM releases WHERE package=:package AND index=:index"
+    status=:status
+WHERE package=:package AND idx=:idx`
+const removeReleaseQuery = "DROP * FROM releases WHERE package=:package AND index=:idx"
 
 type Release struct {
 	Package string
@@ -53,7 +54,7 @@ type Release struct {
 	Latest  string
 	Updated time.Time
 	Status  int
-	Index   int
+	Index   int `db:"idx"`
 }
 
 func GetReleases(db *sqlx.DB, name string) ([]Release, error) {
@@ -64,12 +65,13 @@ func GetReleases(db *sqlx.DB, name string) ([]Release, error) {
 
 func GetAllReleases(db *sqlx.DB) ([]Release, error) {
 	releases := make([]Release, 0)
-	err := db.Get(&releases, getAllReleasesQuery)
+	err := db.Select(&releases, getAllReleasesQuery)
 	return releases, err
 }
 
 func (r Release) Check(db *sqlx.DB) Release {
-	if r.Status < StatusOutOfDate || time.Since(r.Updated) > 4*time.Hour {
+	if r.Status < StatusOutOfDate || time.Since(r.Updated) > (4*time.Hour) {
+        fmt.Printf("Updating %s...\n", r.Package)
 		found := false
 		for _, p := range providers.All() {
 			name := p.Match(r.Source)
@@ -90,7 +92,7 @@ func (r Release) Check(db *sqlx.DB) Release {
 			vOld := NewVersion(r.Current)
 			vLatest := NewVersion(r.Latest)
 			compare := vLatest.Compare(vOld)
-			if compare > 0 {
+			if compare < 0 {
 				r.Status = StatusOutOfDate
 			} else if compare == 0 {
 				r.Status = StatusUpToDate

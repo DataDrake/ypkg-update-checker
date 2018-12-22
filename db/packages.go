@@ -32,10 +32,8 @@ func UpdatePackage(db *sqlx.DB, releases []Release) error {
 	for index, release := range releases {
 		if index >= len(prev) {
 			_, err = tx.NamedExec(insertReleaseQuery, release)
-		} else if release.Updated.After(prev[index].Updated) {
-			_, err = tx.NamedExec(updateReleaseQuery, release)
 		} else {
-			// do nothing
+			_, err = tx.NamedExec(updateReleaseQuery, release)
 		}
 		if err != nil {
 			tx.Rollback()
