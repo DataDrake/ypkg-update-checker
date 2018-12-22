@@ -3,6 +3,8 @@ github.com/BurntSushi/toml v0.3.0 h1:e1/Ivsx3Z0FVTV0NSOv/aVgbUWyQuzj7DDnFblkRvsY
 github.com/BurntSushi/toml v0.3.0/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDrake/cli-ng v0.0.0-20180804170624-8a8956931f20 h1:gbrqGAQlGwjC2lmsXAef27MtILiOoFodJ3QDOG4qN/0=
 github.com/DataDrake/cli-ng v0.0.0-20180804170624-8a8956931f20/go.mod h1:/JlTJD8NDqciBxx+yPDBuKb0v5XnUQBvnNKxc29/zKc=
+github.com/DataDrake/cli-ng v1.0.0 h1:VuP5l0uvByVEwkka/AMiLoPCOicdKMC1BNYA2/jPiL8=
+github.com/DataDrake/cli-ng v1.0.0/go.mod h1:/JlTJD8NDqciBxx+yPDBuKb0v5XnUQBvnNKxc29/zKc=
 github.com/DataDrake/cuppa v0.0.0-20180821073948-0607994ed8a9 h1:Zmtr7/eZrGmDIaM0uFh7KT8ccvpM97GX+AZlaOHCBBQ=
 github.com/DataDrake/cuppa v0.0.0-20180821073948-0607994ed8a9/go.mod h1:iNOma7zUE2W8sOO4/ms8Z8Na0YX+9c9923KDZox340E=
 github.com/DataDrake/cuppa v0.0.0-20181218080310-f340b73daa4a h1:keJs+cyfTHE8ibb33qv0/TtlkHbXY7XBCwptpkNbAH4=
@@ -24,6 +26,7 @@ github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgI
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/golang/dep v0.5.0/go.mod h1:6RZ2Wai7dSWk7qL55sDYk+8UPFqcW7all2KDBraPPFA=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/lint v0.0.0-20180702182130-06c8688daad7/go.mod h1:tluoj9z5200jBnyusfRPU2LqT6J+DAorxEvtC7LHB+E=
@@ -33,9 +36,15 @@ github.com/golang/lint v0.0.0-20181212231659-93c0bb5c8393/go.mod h1:tluoj9z5200j
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/jmank88/nuts v0.3.0/go.mod h1:kTf5cyoLibZUQg9Lns/gteKO1d/5XrhacD1QVKviAKk=
+github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=
+github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/leonelquinteros/gotext v1.3.1 h1:K27CGKi2OOo2dFa7B5ZjRrUQm1v/kUT7hBTM2Ep4NhY=
 github.com/leonelquinteros/gotext v1.3.1/go.mod h1:wC3peUDQHST5UU2RQefLkMIN1MWLvkCpmd59+et4jk4=
+github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
+github.com/mattn/go-sqlite3 v1.9.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
+github.com/mattn/go-sqlite3 v1.10.0 h1:jbhqpg7tQe4SupckyijYiy0mJJ/pRyHvXf7JdWK860o=
+github.com/mattn/go-sqlite3 v1.10.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/mattn/kinako v0.0.0-20170717041458-332c0a7e205a h1:0Q3H0YXzMHiciXtRcM+j0jiCe8WKPQHoRgQiRTnfcLY=
 github.com/mattn/kinako v0.0.0-20170717041458-332c0a7e205a/go.mod h1:CdTTBOYzS5E4mWS1N8NWP6AHI19MP0A2B18n3hLzRMk=
 github.com/nightlyone/lockfile v0.0.0-20180618180623-0ad87eef1443/go.mod h1:JbxfV1Iifij2yhRjXai0oFrbpxszXHRx1E5RuM26o4Y=
